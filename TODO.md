@@ -1,6 +1,6 @@
-# TROXXER TODO - Future Improvements & Features
+# DOMINUS TODO - Future Improvements & Features
 
-Organized roadmap for future development of TROXXER.
+Organized roadmap for future development of DOMINUS.
 
 **Legend:**
 - 🔥 High Priority / Quick Win
@@ -299,7 +299,7 @@ Organized roadmap for future development of TROXXER.
   - Notification setup wizard
 
 - [💡] **Update Checker**
-  - Check for new TROXXER versions
+  - Check for new DOMINUS versions
   - Auto-update capability (opt-in)
   - Changelog display
   - Tool version checking
@@ -422,7 +422,7 @@ Organized roadmap for future development of TROXXER.
 
 ## Contributing
 
-Have an idea for TROXXER?
+Have an idea for DOMINUS?
 
 1. Check if it's already in this TODO
 2. Open an issue describing the feature
@@ -465,7 +465,7 @@ Have an idea for TROXXER?
 
 ### Philosophy
 
-TROXXER should remain:
+DOMINUS should remain:
 - **Easy to use** - Simple for beginners, powerful for experts
 - **Fast** - Performance is a feature
 - **Reliable** - Handle errors gracefully

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TROXXER - Chaos Bug Bounty Programs Helper
+# DOMINUS - Chaos Bug Bounty Programs Helper
 # Fetches and displays available bug bounty programs from ProjectDiscovery's public Chaos data
 # No API key required!
 
@@ -270,7 +270,7 @@ show_stats() {
 # Show help
 show_help() {
     cat << EOF
-TROXXER Chaos Programs Helper
+DOMINUS Chaos Programs Helper
 
 Usage: $0 [command] [options]
 

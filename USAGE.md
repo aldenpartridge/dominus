@@ -1,6 +1,6 @@
-  # TROXXER Usage Guide
+  # DOMINUS Usage Guide
 
-Quick reference for using TROXXER v2.0 with all new features.
+Quick reference for using DOMINUS v2.0 with all new features.
 
 ## Table of Contents
 
@@ -18,8 +18,8 @@ Quick reference for using TROXXER v2.0 with all new features.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/aldenpartridge/troxxer.git
-cd troxxer
+git clone https://github.com/aldenpartridge/dominus.git
+cd dominus
 
 # 2. Make scripts executable
 chmod +x start.sh scripts/*.sh
@@ -491,7 +491,7 @@ export SCOPE_FILE="$PWD/scope.txt"
 ./start.sh  # Option 4
 
 # Check logs
-tail -f $BASE_DIR/logs/troxxer.log
+tail -f $BASE_DIR/logs/dominus.log
 tail -f $BASE_DIR/$ORG_NAME/logs/stage2_complete.log
 ```
 

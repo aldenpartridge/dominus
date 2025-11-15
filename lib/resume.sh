@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Resume capability for TROXXER
+# Resume capability for DOMINUS
 # Allows interrupted scans to continue from last checkpoint
 
 # Source common library if not already loaded
@@ -228,7 +228,7 @@ save_scan_state() {
     local state_file="$work_dir/.state"
 
     cat > "$state_file" << EOF
-# TROXXER Scan State
+# DOMINUS Scan State
 SCAN_START_TIME=${SCAN_START_TIME:-$(date +%s)}
 DOMAIN=$DOMAIN
 ORG_NAME=$ORG_NAME

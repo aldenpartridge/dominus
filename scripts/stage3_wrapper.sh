@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TROXXER Stage 3 Wrapper - Enhanced version with v2.0 features
+# DOMINUS Stage 3 Wrapper - Enhanced version with v2.0 features
 # This script wraps the original stage3.sh with new capabilities
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
