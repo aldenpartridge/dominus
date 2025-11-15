@@ -8,6 +8,9 @@ source "$SCRIPT_DIR/../recon_config.sh" 2>/dev/null || {
 # Set default wordlists directory
 export WORDLISTS_DIR="${WORDLISTS_DIR:-$BASE_DIR/wordlists}"
 
+# Debug mode (set DEBUG=1 for verbose logging)
+export DEBUG="${DEBUG:-0}"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,6 +25,7 @@ log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 log_error() { echo -e "${RED}[✗]${NC} $1"; }
 log_phase() { echo -e "${MAGENTA}[>>]${NC} ${CYAN}$1${NC}"; }
+log_debug() { [ "$DEBUG" = "1" ] && echo -e "${CYAN}[DEBUG]${NC} $1" || true; }
 
 check_tool() {
     command -v "$1" >/dev/null 2>&1
@@ -223,9 +227,12 @@ main() {
     echo -e "${CYAN}║${NC}                   ${YELLOW}PHASE 3: HTTP Probing${NC}                     ${CYAN}║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    
+
     if check_tool httpx && [ -f "$WORK_DIR/all_resolved.txt" ] && [ -s "$WORK_DIR/all_resolved.txt" ]; then
         log_phase "Probing for live HTTP services..."
+        log_debug "Running httpx with tech detection and title extraction"
+
+        # Save full httpx output with metadata for reference
         httpx -l "$WORK_DIR/all_resolved.txt" \
             -silent \
             -t ${HTTPX_THREADS:-50} \
@@ -233,13 +240,34 @@ main() {
             -status-code \
             -tech-detect \
             -title \
-            -o "$WORK_DIR/all_alive.txt" 2>/dev/null || true
-        
-        ALIVE_COUNT=$(wc -l < "$WORK_DIR/all_alive.txt" 2>/dev/null || echo "0")
-        log_success "Live targets: ${GREEN}$ALIVE_COUNT${NC} hosts responding"
+            -o "$WORK_DIR/all_alive_full.txt" 2>/dev/null || true
+
+        if [ -f "$WORK_DIR/all_alive_full.txt" ] && [ -s "$WORK_DIR/all_alive_full.txt" ]; then
+            log_debug "Httpx raw output saved to all_alive_full.txt"
+
+            # Extract clean URLs (everything before the first '[' or space)
+            # Format: "http://example.com [200] [title] [tech]" -> "http://example.com"
+            sed -E 's/[[:space:]]\[.*//' "$WORK_DIR/all_alive_full.txt" | sort -u > "$WORK_DIR/all_alive.txt"
+
+            ALIVE_COUNT=$(wc -l < "$WORK_DIR/all_alive.txt" 2>/dev/null || echo "0")
+            log_success "Live targets: ${GREEN}$ALIVE_COUNT${NC} hosts responding"
+            log_debug "Clean URLs extracted to all_alive.txt for tool consumption"
+
+            if [ "$DEBUG" = "1" ]; then
+                log_debug "Sample URLs:"
+                head -3 "$WORK_DIR/all_alive.txt" 2>/dev/null | while read url; do
+                    log_debug "  $url"
+                done
+            fi
+        else
+            log_warning "Httpx returned no results"
+            touch "$WORK_DIR/all_alive.txt"
+            touch "$WORK_DIR/all_alive_full.txt"
+        fi
     else
         log_warning "HTTP probing skipped"
         touch "$WORK_DIR/all_alive.txt"
+        touch "$WORK_DIR/all_alive_full.txt"
     fi
     
     # ═══════════════════════════════════════════════════════════
@@ -304,28 +332,47 @@ main() {
     echo -e "${CYAN}║${NC}                  ${YELLOW}PHASE 5: URL Discovery${NC}                     ${CYAN}║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    
+
     # Waybackurls
     if check_tool waybackurls && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Mining wayback archives..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
         cat "$WORK_DIR/all_subs.txt" | waybackurls > "$WORK_DIR/.urls_wayback.txt" 2>/dev/null || true
+        [ -f "$WORK_DIR/.urls_wayback.txt" ] && log_debug "Waybackurls: $(wc -l < "$WORK_DIR/.urls_wayback.txt") URLs found"
+    else
+        log_debug "Waybackurls skipped (tool missing or no subdomains)"
     fi
-    
+
     # GAU
     if check_tool gau && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Gathering URLs with GAU..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
         cat "$WORK_DIR/all_subs.txt" | gau --threads ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gau.txt" 2>/dev/null || true
+        [ -f "$WORK_DIR/.urls_gau.txt" ] && log_debug "GAU: $(wc -l < "$WORK_DIR/.urls_gau.txt") URLs found"
+    else
+        log_debug "GAU skipped (tool missing or no subdomains)"
     fi
-    
+
     # Gauplus
     if check_tool gauplus && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Executing GAU+ enumeration..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
         cat "$WORK_DIR/all_subs.txt" | gauplus -t ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gauplus.txt" 2>/dev/null || true
+        [ -f "$WORK_DIR/.urls_gauplus.txt" ] && log_debug "GAU+: $(wc -l < "$WORK_DIR/.urls_gauplus.txt") URLs found"
+    else
+        log_debug "GAU+ skipped (tool missing or no subdomains)"
     fi
-    
+
     # Katana
     if check_tool katana && [ -f "$WORK_DIR/all_alive.txt" ] && [ -s "$WORK_DIR/all_alive.txt" ]; then
         log_phase "Deploying Katana crawler..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_alive.txt") live URLs"
+        if [ "$DEBUG" = "1" ]; then
+            log_debug "Sample input URLs for Katana:"
+            head -2 "$WORK_DIR/all_alive.txt" | while read url; do
+                log_debug "  $url"
+            done
+        fi
         katana -list "$WORK_DIR/all_alive.txt" \
             -d 3 \
             -jc \
@@ -333,28 +380,51 @@ main() {
             -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg \
             -silent \
             -o "$WORK_DIR/.urls_katana.txt" 2>/dev/null || true
+        [ -f "$WORK_DIR/.urls_katana.txt" ] && log_debug "Katana: $(wc -l < "$WORK_DIR/.urls_katana.txt") URLs found"
+    else
+        log_debug "Katana skipped (tool missing or no live hosts)"
     fi
-    
+
     # Hakrawler
     if check_tool hakrawler && [ -f "$WORK_DIR/all_alive.txt" ] && [ -s "$WORK_DIR/all_alive.txt" ]; then
         log_phase "Running hakrawler spider..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_alive.txt") live URLs"
         cat "$WORK_DIR/all_alive.txt" | hakrawler -depth 3 -plain > "$WORK_DIR/.urls_hakrawler.txt" 2>/dev/null || true
+        [ -f "$WORK_DIR/.urls_hakrawler.txt" ] && log_debug "Hakrawler: $(wc -l < "$WORK_DIR/.urls_hakrawler.txt") URLs found"
+    else
+        log_debug "Hakrawler skipped (tool missing or no live hosts)"
     fi
     
     # Combine
     log_phase "Consolidating URL intelligence..."
+
+    # Debug: Show which URL files were created
+    if [ "$DEBUG" = "1" ]; then
+        log_debug "URL sources created:"
+        for f in "$WORK_DIR"/.urls_*.txt; do
+            if [ -f "$f" ]; then
+                COUNT=$(wc -l < "$f" 2>/dev/null || echo "0")
+                log_debug "  $(basename "$f"): $COUNT URLs"
+            fi
+        done
+    fi
+
     cat "$WORK_DIR"/.urls_*.txt 2>/dev/null | sort -u > "$WORK_DIR/.all_urls_raw.txt"
-    
+    RAW_COUNT=$(wc -l < "$WORK_DIR/.all_urls_raw.txt" 2>/dev/null || echo "0")
+    log_debug "Combined raw URLs: $RAW_COUNT (before deduplication)"
+
     if check_tool uro && [ -f "$WORK_DIR/.all_urls_raw.txt" ] && [ -s "$WORK_DIR/.all_urls_raw.txt" ]; then
+        log_debug "Applying uro deduplication"
         cat "$WORK_DIR/.all_urls_raw.txt" | uro > "$WORK_DIR/all_urls.txt" 2>/dev/null || \
         cp "$WORK_DIR/.all_urls_raw.txt" "$WORK_DIR/all_urls.txt"
     else
+        log_debug "Uro not available, using raw URLs"
         cp "$WORK_DIR/.all_urls_raw.txt" "$WORK_DIR/all_urls.txt" 2>/dev/null || touch "$WORK_DIR/all_urls.txt"
     fi
-    
+
     URL_COUNT=$(wc -l < "$WORK_DIR/all_urls.txt" 2>/dev/null || echo "0")
     log_success "URLs extracted: ${CYAN}$URL_COUNT${NC} unique endpoints"
-    
+
     rm -f "$WORK_DIR"/.urls_*.txt "$WORK_DIR/.all_urls_raw.txt"
     
     # ═══════════════════════════════════════════════════════════
@@ -384,29 +454,45 @@ main() {
     echo -e "${CYAN}║${NC}             ${YELLOW}PHASE 7: JavaScript Discovery${NC}                 ${CYAN}║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    
+
     if [ -f "$WORK_DIR/all_urls.txt" ] && [ -s "$WORK_DIR/all_urls.txt" ]; then
+        log_debug "Extracting .js files from $(wc -l < "$WORK_DIR/all_urls.txt") URLs"
         grep -iE '\.js(\?|$)' "$WORK_DIR/all_urls.txt" > "$WORK_DIR/all_js.txt" 2>/dev/null || touch "$WORK_DIR/all_js.txt"
+        [ -s "$WORK_DIR/all_js.txt" ] && log_debug "Found $(wc -l < "$WORK_DIR/all_js.txt") .js files in URLs"
     else
+        log_debug "No URLs available for JS extraction"
         touch "$WORK_DIR/all_js.txt"
     fi
-    
+
     # Subjs
     if check_tool subjs && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Hunting JavaScript files..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
         cat "$WORK_DIR/all_subs.txt" | subjs >> "$WORK_DIR/all_js.txt" 2>/dev/null || true
+    else
+        log_debug "Subjs skipped (tool missing or no subdomains)"
     fi
-    
+
     # GetJS
     if check_tool getJS && [ -f "$WORK_DIR/all_alive.txt" ] && [ -s "$WORK_DIR/all_alive.txt" ]; then
         log_phase "Extracting JavaScript assets..."
+        log_debug "Input: $(wc -l < "$WORK_DIR/all_alive.txt") live URLs"
+        if [ "$DEBUG" = "1" ]; then
+            log_debug "Sample input URLs for getJS:"
+            head -2 "$WORK_DIR/all_alive.txt" | while read url; do
+                log_debug "  $url"
+            done
+        fi
         getJS --input "$WORK_DIR/all_alive.txt" --complete >> "$WORK_DIR/all_js.txt" 2>/dev/null || true
+    else
+        log_debug "getJS skipped (tool missing or no live hosts)"
     fi
-    
+
     if [ -f "$WORK_DIR/all_js.txt" ]; then
         sort -u "$WORK_DIR/all_js.txt" -o "$WORK_DIR/all_js.txt"
         JS_COUNT=$(wc -l < "$WORK_DIR/all_js.txt")
         log_success "JavaScript files: ${GREEN}$JS_COUNT${NC} sources identified"
+        log_debug "Deduplicated JS files saved"
     fi
     
     # ═══════════════════════════════════════════════════════════
