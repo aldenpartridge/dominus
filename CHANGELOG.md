@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to TROXXER will be documented in this file.
+All notable changes to DOMINUS will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -372,7 +372,7 @@ See CONTRIBUTING.md (to be created) for guidelines on:
 
 ## Authors
 
-- **Initial work** - TROXXER v1.0
+- **Initial work** - DOMINUS v1.0
 - **v2.0 enhancements** - Implemented via Claude Code on 2025-11-14
 
 ## License
@@ -381,10 +381,10 @@ See CONTRIBUTING.md (to be created) for guidelines on:
 
 ## Acknowledgments
 
-All integrations in TROXXER rely on excellent open-source tools from the security community:
+All integrations in DOMINUS rely on excellent open-source tools from the security community:
 - ProjectDiscovery (subfinder, httpx, nuclei, dnsx, naabu, etc.)
 - OWASP (Amass)
 - TomNomNom (waybackurls, anew, etc.)
 - And many more individual contributors
 
-Thank you to all tool maintainers for making TROXXER possible!
+Thank you to all tool maintainers for making DOMINUS possible!

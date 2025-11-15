@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Input validation and sanitization for TROXXER
+# Input validation and sanitization for DOMINUS
 
 # Source common library if not already loaded
 if [ -z "$GREEN" ]; then

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Notification system for TROXXER
+# Notification system for DOMINUS
 # Supports: Telegram, Slack, Discord
 
 # Source common library if not already loaded
@@ -53,7 +53,7 @@ send_slack() {
     local payload=$(cat <<EOF
 {
     "text": "$message",
-    "username": "TROXXER",
+    "username": "DOMINUS",
     "icon_emoji": ":robot_face:"
 }
 EOF
@@ -87,8 +87,8 @@ send_discord() {
 
     local payload=$(cat <<EOF
 {
-    "username": "TROXXER",
-    "avatar_url": "https://example.com/troxxer-icon.png",
+    "username": "DOMINUS",
+    "avatar_url": "https://example.com/dominus-icon.png",
     "content": "$message"
 }
 EOF
@@ -114,7 +114,7 @@ EOF
 
 send_notification() {
     local message="$1"
-    local title="${2:-TROXXER Notification}"
+    local title="${2:-DOMINUS Notification}"
 
     if [ "$ENABLE_NOTIFICATIONS" != "true" ]; then
         log_debug "Notifications disabled"
@@ -228,7 +228,7 @@ notify_critical_finding() {
 test_notifications() {
     log_info "Testing notification systems..."
 
-    local test_message="This is a test notification from TROXXER"
+    local test_message="This is a test notification from DOMINUS"
     local success=0
     local total=0
 

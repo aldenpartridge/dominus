@@ -1,15 +1,15 @@
-# CLAUDE.md - AI Assistant Guide for TROXXER
+# CLAUDE.md - AI Assistant Guide for DOMINUS
 
 ## Project Overview
 
-**Project Name:** TROXXER
+**Project Name:** DOMINUS
 **Purpose:** Automated Bug Bounty Reconnaissance Suite
 **Type:** Security reconnaissance framework
 **Language:** Bash shell scripts
 **License:** Not specified
 **Status:** Active development
 
-TROXXER is a comprehensive bash-based security reconnaissance framework designed to automate the discovery of subdomains, URLs, vulnerabilities, and potential security issues for bug bounty programs and penetration testing. The tool orchestrates 25+ security tools through a streamlined 3-stage pipeline.
+DOMINUS is a comprehensive bash-based security reconnaissance framework designed to automate the discovery of subdomains, URLs, vulnerabilities, and potential security issues for bug bounty programs and penetration testing. The tool orchestrates 25+ security tools through a streamlined 3-stage pipeline.
 
 ### Key Characteristics
 - **Automated Pipeline:** Multi-stage reconnaissance from subdomain discovery to vulnerability scanning
@@ -21,7 +21,7 @@ TROXXER is a comprehensive bash-based security reconnaissance framework designed
 ## Repository Structure
 
 ```
-/home/user/troxxer/
+/home/user/dominus/
 ├── README.md              # Minimal project description (needs expansion)
 ├── start.sh               # Main entry point - interactive launcher
 ├── scripts/               # Core reconnaissance scripts
@@ -261,7 +261,7 @@ org_name=$(echo "$org_name" | tr -cd '[:alnum:]_-')
 ### Git Workflow
 
 **Current Branch:** `claude/create-codebase-documentation-014xWmnF6knqGxNLPh2eAGob`
-**Remote:** `http://local_proxy@127.0.0.1:28533/git/aldenpartridge/troxxer`
+**Remote:** `http://local_proxy@127.0.0.1:28533/git/aldenpartridge/dominus`
 
 **For AI Assistants:**
 1. Always develop on the designated Claude branch
@@ -451,7 +451,7 @@ tool --options > output.txt 2>/dev/null
 
 ## Quick Reference
 
-### Running TROXXER
+### Running DOMINUS
 ```bash
 # Interactive mode
 ./start.sh
@@ -470,10 +470,10 @@ bash scripts/stage3.sh example.com mycompany
 - **recon_config.sh:** Optional configuration (create if needed)
 
 ### Common Directories
-- **Project Root:** `/home/user/troxxer/`
+- **Project Root:** `/home/user/dominus/`
 - **Output Base:** `$BASE_DIR` (default: `$HOME/recon`)
 - **Wordlists:** `$WORDLISTS_DIR` (default: `$HOME/recon/wordlists`)
-- **Scripts:** `/home/user/troxxer/scripts/`
+- **Scripts:** `/home/user/dominus/scripts/`
 
 ### Useful Commands
 ```bash
@@ -522,4 +522,4 @@ wc -l ~/recon/*/all_*.txt
 
 **Last Updated:** 2025-11-14
 **Document Version:** 1.0
-**For:** AI Assistants working with TROXXER codebase
+**For:** AI Assistants working with DOMINUS codebase

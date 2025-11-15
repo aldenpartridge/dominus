@@ -1,8 +1,8 @@
-# TROXXER
+# DOMINUS
 
 **Automated Bug Bounty Reconnaissance Suite**
 
-TROXXER is a comprehensive bash-based security reconnaissance framework designed to automate the discovery of subdomains, URLs, vulnerabilities, and potential security issues for authorized bug bounty programs and penetration testing engagements.
+DOMINUS is a comprehensive bash-based security reconnaissance framework designed to automate the discovery of subdomains, URLs, vulnerabilities, and potential security issues for authorized bug bounty programs and penetration testing engagements.
 
 ## Features
 
@@ -22,8 +22,8 @@ TROXXER is a comprehensive bash-based security reconnaissance framework designed
 
 ```bash
 # Clone repository
-git clone https://github.com/aldenpartridge/troxxer.git
-cd troxxer
+git clone https://github.com/aldenpartridge/dominus.git
+cd dominus
 
 # Make scripts executable
 chmod +x start.sh scripts/*.sh

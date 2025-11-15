@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Common functions and variables for TROXXER
+# Common functions and variables for DOMINUS
 # Source this file in all scripts: source "$SCRIPT_DIR/lib/common.sh"
 
 # ============================================================================
@@ -42,7 +42,7 @@ log_to_file() {
     local message="$1"
     if [ "$ENABLE_DETAILED_LOGGING" = "true" ] && [ -n "$LOG_DIR" ]; then
         mkdir -p "$LOG_DIR"
-        echo "[$(get_timestamp)] $message" >> "$LOG_DIR/troxxer.log"
+        echo "[$(get_timestamp)] $message" >> "$LOG_DIR/dominus.log"
     fi
 }
 
