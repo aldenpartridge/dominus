@@ -6,10 +6,12 @@
 
 # Source configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 source "$SCRIPT_DIR/../recon_config.sh" 2>/dev/null || {
     echo "[!] Warning: Could not source config, using defaults"
-    export BASE_DIR="$HOME/recon"
-    export WORDLISTS_DIR="$HOME/recon/wordlists"
+    export BASE_DIR="$PROJECT_DIR/output"
+    export WORDLISTS_DIR="$PROJECT_DIR/output/wordlists"
 }
 
 # Try to source common library for better logging

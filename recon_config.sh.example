@@ -9,7 +9,10 @@
 # ============================================================================
 
 # Base directory for all reconnaissance data
-export BASE_DIR="$HOME/recon"
+# Default: saves to dominus/output (keeps everything in project directory)
+# Alternative: export BASE_DIR="$HOME/recon" (saves to home directory)
+DOMINUS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export BASE_DIR="$DOMINUS_DIR/output"
 
 # Directory for wordlists and other resources
 export WORDLISTS_DIR="$BASE_DIR/wordlists"

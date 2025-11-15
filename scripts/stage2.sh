@@ -1,8 +1,10 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 source "$SCRIPT_DIR/../recon_config.sh" 2>/dev/null || {
-    export BASE_DIR="$HOME/recon"
+    export BASE_DIR="$PROJECT_DIR/output"
 }
 
 # Set default wordlists directory
