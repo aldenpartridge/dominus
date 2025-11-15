@@ -85,7 +85,9 @@ main() {
     # Subfinder
     if check_tool subfinder; then
         log_phase "Launching subfinder reconnaissance..."
-        subfinder -d "$DOMAIN" -all -recursive -silent -o "$WORK_DIR/.subs_subfinder.txt" 2>/dev/null || true
+        # Note: Removed -recursive to prevent infinite loops on wildcard DNS
+        # -all fetches from all sources, which is sufficient for comprehensive enumeration
+        subfinder -d "$DOMAIN" -all -silent -o "$WORK_DIR/.subs_subfinder.txt" 2>/dev/null || true
         if [ -f "$WORK_DIR/.subs_subfinder.txt" ]; then
             COUNT=$(wc -l < "$WORK_DIR/.subs_subfinder.txt")
             log_success "Subfinder: ${GREEN}$COUNT${NC} subdomains identified"
@@ -112,18 +114,17 @@ main() {
         fi
     fi
     
-    # Combine
+    # Combine and deduplicate
     log_phase "Aggregating intelligence..."
-    
-    if check_tool anew; then
-        cat "$WORK_DIR"/.subs_*.txt 2>/dev/null | sort -u | anew "$WORK_DIR/all_subs.txt" >/dev/null 2>&1 || \
-        cat "$WORK_DIR"/.subs_*.txt 2>/dev/null | sort -u > "$WORK_DIR/all_subs.txt"
-    else
-        cat "$WORK_DIR"/.subs_*.txt 2>/dev/null | sort -u > "$WORK_DIR/all_subs.txt"
+
+    # Combine all subdomain files
+    cat "$WORK_DIR"/.subs_*.txt 2>/dev/null | sort -u > "$WORK_DIR/all_subs.txt"
+
+    # Ensure root domain is included
+    if ! grep -qFx "$DOMAIN" "$WORK_DIR/all_subs.txt" 2>/dev/null; then
+        echo "$DOMAIN" >> "$WORK_DIR/all_subs.txt"
+        sort -u "$WORK_DIR/all_subs.txt" -o "$WORK_DIR/all_subs.txt"
     fi
-    
-    echo "$DOMAIN" | anew "$WORK_DIR/all_subs.txt" >/dev/null 2>&1 || echo "$DOMAIN" >> "$WORK_DIR/all_subs.txt"
-    sort -u "$WORK_DIR/all_subs.txt" -o "$WORK_DIR/all_subs.txt"
     
     SUB_COUNT=$(wc -l < "$WORK_DIR/all_subs.txt" 2>/dev/null || echo "0")
     log_success "Total assets: ${CYAN}$SUB_COUNT${NC} unique subdomains"
@@ -143,15 +144,18 @@ main() {
         log_phase "Resolving DNS records..."
 
         # Try DNS resolution with dnsx
+        # Note: -silent mode outputs only resolved domains (one per line)
         dnsx -l "$WORK_DIR/all_subs.txt" \
             -silent \
             -t ${DEFAULT_THREADS:-50} \
             -retry 2 \
             -o "$WORK_DIR/.resolved_raw.txt" 2>"$WORK_DIR/.dnsx_errors.txt" || true
 
-        # Extract just the subdomain names (first column)
+        # With -silent, dnsx outputs just the domain names (no columns)
+        # Clean and deduplicate the output
         if [ -f "$WORK_DIR/.resolved_raw.txt" ] && [ -s "$WORK_DIR/.resolved_raw.txt" ]; then
-            awk '{print $1}' "$WORK_DIR/.resolved_raw.txt" | sort -u > "$WORK_DIR/all_resolved.txt"
+            # Extract first field (handles both single-column and multi-column output)
+            awk '{print $1}' "$WORK_DIR/.resolved_raw.txt" | grep -v '^$' | sort -u > "$WORK_DIR/all_resolved.txt"
             rm -f "$WORK_DIR/.resolved_raw.txt"
         else
             touch "$WORK_DIR/all_resolved.txt"
@@ -182,7 +186,7 @@ main() {
                     -r "$RESOLVERS_FILE" \
                     -silent \
                     -t ${DEFAULT_THREADS:-50} \
-                    -retry 1 \
+                    -retry 2 \
                     -o "$WORK_DIR/.resolved_retry.txt" 2>/dev/null || true
             else
                 # Fall back to public DNS if resolvers.txt doesn't exist
@@ -193,7 +197,7 @@ main() {
                     -r "$WORK_DIR/.fallback_resolvers.txt" \
                     -silent \
                     -t ${DEFAULT_THREADS:-50} \
-                    -retry 1 \
+                    -retry 2 \
                     -o "$WORK_DIR/.resolved_retry.txt" 2>/dev/null || true
 
                 rm -f "$WORK_DIR/.fallback_resolvers.txt"
@@ -245,9 +249,10 @@ main() {
         if [ -f "$WORK_DIR/all_alive_full.txt" ] && [ -s "$WORK_DIR/all_alive_full.txt" ]; then
             log_debug "Httpx raw output saved to all_alive_full.txt"
 
-            # Extract clean URLs (everything before the first '[' or space)
-            # Format: "http://example.com [200] [title] [tech]" -> "http://example.com"
-            sed -E 's/[[:space:]]\[.*//' "$WORK_DIR/all_alive_full.txt" | sort -u > "$WORK_DIR/all_alive.txt"
+            # Extract clean URLs using httpx json output is more reliable, but for backward compatibility:
+            # Match URL at start of line, stop at first space (httpx metadata starts with space)
+            # This preserves URLs with brackets: http://example.com/api?param=[value]
+            awk '{print $1}' "$WORK_DIR/all_alive_full.txt" | sort -u > "$WORK_DIR/all_alive.txt"
 
             ALIVE_COUNT=$(wc -l < "$WORK_DIR/all_alive.txt" 2>/dev/null || echo "0")
             log_success "Live targets: ${GREEN}$ALIVE_COUNT${NC} hosts responding"
@@ -283,10 +288,12 @@ main() {
         log_phase "Scanning for open ports..."
         log_info "Note: httpx already identified ports 80/443; scanning for additional services"
 
-        # Extract hostnames from httpx output (removes http://, https://, and metadata)
-        # httpx outputs: "http://example.com [200]"
-        # We need: "example.com"
-        sed -E 's|^https?://||; s|/.*||; s| \[.*||' "$WORK_DIR/all_alive.txt" | sort -u > "$WORK_DIR/.hosts_for_naabu.txt"
+        # Extract hostnames from httpx output (removes http://, https://, paths, and ports)
+        # httpx outputs: "http://example.com" or "https://example.com:8443/path"
+        # We need: "example.com" (naabu will scan all ports anyway)
+        # Handle IPv6 addresses properly: http://[2001:db8::1]:8080/path
+        sed -E 's|^https?://||; s|^(\[[^]]+\]).*|\1|; s|:[0-9]+(/.*)?$||; s|/.*||' "$WORK_DIR/all_alive.txt" | \
+        sed -E 's|^\[([^]]+)\]$|\1|' | sort -u > "$WORK_DIR/.hosts_for_naabu.txt"
 
         if [ -s "$WORK_DIR/.hosts_for_naabu.txt" ]; then
             HOST_COUNT=$(wc -l < "$WORK_DIR/.hosts_for_naabu.txt")
@@ -377,7 +384,7 @@ main() {
             -d 3 \
             -jc \
             -fx \
-            -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg \
+            -ef woff,woff2,css,png,svg,jpg,jpeg,gif,ico,ttf,eot \
             -silent \
             -o "$WORK_DIR/.urls_katana.txt" 2>/dev/null || true
         [ -f "$WORK_DIR/.urls_katana.txt" ] && log_debug "Katana: $(wc -l < "$WORK_DIR/.urls_katana.txt") URLs found"
@@ -457,7 +464,10 @@ main() {
 
     if [ -f "$WORK_DIR/all_urls.txt" ] && [ -s "$WORK_DIR/all_urls.txt" ]; then
         log_debug "Extracting .js files from $(wc -l < "$WORK_DIR/all_urls.txt") URLs"
-        grep -iE '\.js(\?|$)' "$WORK_DIR/all_urls.txt" > "$WORK_DIR/all_js.txt" 2>/dev/null || touch "$WORK_DIR/all_js.txt"
+        # Match .js files but exclude .json
+        # Handles: .js, .js?, .js#, .js;jsessionid, etc.
+        # Excludes: .json, .jsonp
+        grep -iE '\.js([?#;]|$)' "$WORK_DIR/all_urls.txt" | grep -viE '\.json[p]?([?#;]|$)' > "$WORK_DIR/all_js.txt" 2>/dev/null || touch "$WORK_DIR/all_js.txt"
         [ -s "$WORK_DIR/all_js.txt" ] && log_debug "Found $(wc -l < "$WORK_DIR/all_js.txt") .js files in URLs"
     else
         log_debug "No URLs available for JS extraction"

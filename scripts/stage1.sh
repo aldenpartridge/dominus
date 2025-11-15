@@ -472,13 +472,19 @@ main() {
     # Update Nuclei templates
     if command -v nuclei >/dev/null 2>&1; then
         log_info "Updating Nuclei templates..."
-        nuclei -update-templates -silent 2>/dev/null
+
+        # Update templates with visible output for feedback
+        if nuclei -update-templates 2>&1 | grep -qiE "(updated|installed|latest)"; then
+            log_success "Nuclei templates update successful"
+        else
+            log_warning "Nuclei template update may have failed (check manually)"
+        fi
 
         # Verify templates directory
         TEMPLATE_DIR="$HOME/nuclei-templates"
         if [ -d "$TEMPLATE_DIR" ]; then
             TEMPLATE_COUNT=$(find "$TEMPLATE_DIR" -name "*.yaml" 2>/dev/null | wc -l)
-            log_success "Nuclei templates updated ($TEMPLATE_COUNT templates)"
+            log_success "Nuclei templates available: $TEMPLATE_COUNT templates"
         else
             log_warning "Nuclei templates directory not found"
             log_info "Run: nuclei -update-templates"
