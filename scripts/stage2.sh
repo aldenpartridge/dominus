@@ -337,7 +337,20 @@ main() {
     if check_tool waybackurls && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Mining wayback archives..."
         log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
-        cat "$WORK_DIR/all_subs.txt" | waybackurls > "$WORK_DIR/.urls_wayback.txt" 2>/dev/null || true
+
+        if [ "$DEBUG" = "1" ]; then
+            cat "$WORK_DIR/all_subs.txt" | waybackurls > "$WORK_DIR/.urls_wayback.txt" 2>"$WORK_DIR/.waybackurls_errors.txt" || true
+            if [ -s "$WORK_DIR/.waybackurls_errors.txt" ]; then
+                log_debug "Waybackurls errors:"
+                head -3 "$WORK_DIR/.waybackurls_errors.txt" | while read line; do
+                    log_debug "  $line"
+                done
+            fi
+            rm -f "$WORK_DIR/.waybackurls_errors.txt"
+        else
+            cat "$WORK_DIR/all_subs.txt" | waybackurls > "$WORK_DIR/.urls_wayback.txt" 2>/dev/null || true
+        fi
+
         [ -f "$WORK_DIR/.urls_wayback.txt" ] && log_debug "Waybackurls: $(wc -l < "$WORK_DIR/.urls_wayback.txt") URLs found"
     else
         log_debug "Waybackurls skipped (tool missing or no subdomains)"
@@ -347,7 +360,20 @@ main() {
     if check_tool gau && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Gathering URLs with GAU..."
         log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
-        cat "$WORK_DIR/all_subs.txt" | gau --threads ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gau.txt" 2>/dev/null || true
+
+        if [ "$DEBUG" = "1" ]; then
+            cat "$WORK_DIR/all_subs.txt" | gau --threads ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gau.txt" 2>"$WORK_DIR/.gau_errors.txt" || true
+            if [ -s "$WORK_DIR/.gau_errors.txt" ]; then
+                log_debug "GAU errors:"
+                head -3 "$WORK_DIR/.gau_errors.txt" | while read line; do
+                    log_debug "  $line"
+                done
+            fi
+            rm -f "$WORK_DIR/.gau_errors.txt"
+        else
+            cat "$WORK_DIR/all_subs.txt" | gau --threads ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gau.txt" 2>/dev/null || true
+        fi
+
         [ -f "$WORK_DIR/.urls_gau.txt" ] && log_debug "GAU: $(wc -l < "$WORK_DIR/.urls_gau.txt") URLs found"
     else
         log_debug "GAU skipped (tool missing or no subdomains)"
@@ -357,7 +383,20 @@ main() {
     if check_tool gauplus && [ -f "$WORK_DIR/all_subs.txt" ] && [ -s "$WORK_DIR/all_subs.txt" ]; then
         log_phase "Executing GAU+ enumeration..."
         log_debug "Input: $(wc -l < "$WORK_DIR/all_subs.txt") subdomains"
-        cat "$WORK_DIR/all_subs.txt" | gauplus -t ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gauplus.txt" 2>/dev/null || true
+
+        if [ "$DEBUG" = "1" ]; then
+            cat "$WORK_DIR/all_subs.txt" | gauplus -t ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gauplus.txt" 2>"$WORK_DIR/.gauplus_errors.txt" || true
+            if [ -s "$WORK_DIR/.gauplus_errors.txt" ]; then
+                log_debug "GAU+ errors:"
+                head -3 "$WORK_DIR/.gauplus_errors.txt" | while read line; do
+                    log_debug "  $line"
+                done
+            fi
+            rm -f "$WORK_DIR/.gauplus_errors.txt"
+        else
+            cat "$WORK_DIR/all_subs.txt" | gauplus -t ${DEFAULT_THREADS:-10} > "$WORK_DIR/.urls_gauplus.txt" 2>/dev/null || true
+        fi
+
         [ -f "$WORK_DIR/.urls_gauplus.txt" ] && log_debug "GAU+: $(wc -l < "$WORK_DIR/.urls_gauplus.txt") URLs found"
     else
         log_debug "GAU+ skipped (tool missing or no subdomains)"
@@ -373,13 +412,32 @@ main() {
                 log_debug "  $url"
             done
         fi
-        katana -list "$WORK_DIR/all_alive.txt" \
-            -d 3 \
-            -jc \
-            -fx \
-            -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg \
-            -silent \
-            -o "$WORK_DIR/.urls_katana.txt" 2>/dev/null || true
+
+        if [ "$DEBUG" = "1" ]; then
+            katana -list "$WORK_DIR/all_alive.txt" \
+                -d 3 \
+                -jc \
+                -fx \
+                -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg \
+                -silent \
+                -o "$WORK_DIR/.urls_katana.txt" 2>"$WORK_DIR/.katana_errors.txt" || true
+            if [ -s "$WORK_DIR/.katana_errors.txt" ]; then
+                log_debug "Katana errors:"
+                head -3 "$WORK_DIR/.katana_errors.txt" | while read line; do
+                    log_debug "  $line"
+                done
+            fi
+            rm -f "$WORK_DIR/.katana_errors.txt"
+        else
+            katana -list "$WORK_DIR/all_alive.txt" \
+                -d 3 \
+                -jc \
+                -fx \
+                -ef woff,css,png,svg,jpg,woff2,jpeg,gif,svg \
+                -silent \
+                -o "$WORK_DIR/.urls_katana.txt" 2>/dev/null || true
+        fi
+
         [ -f "$WORK_DIR/.urls_katana.txt" ] && log_debug "Katana: $(wc -l < "$WORK_DIR/.urls_katana.txt") URLs found"
     else
         log_debug "Katana skipped (tool missing or no live hosts)"
@@ -389,7 +447,20 @@ main() {
     if check_tool hakrawler && [ -f "$WORK_DIR/all_alive.txt" ] && [ -s "$WORK_DIR/all_alive.txt" ]; then
         log_phase "Running hakrawler spider..."
         log_debug "Input: $(wc -l < "$WORK_DIR/all_alive.txt") live URLs"
-        cat "$WORK_DIR/all_alive.txt" | hakrawler -depth 3 -plain > "$WORK_DIR/.urls_hakrawler.txt" 2>/dev/null || true
+
+        if [ "$DEBUG" = "1" ]; then
+            cat "$WORK_DIR/all_alive.txt" | hakrawler -depth 3 -plain > "$WORK_DIR/.urls_hakrawler.txt" 2>"$WORK_DIR/.hakrawler_errors.txt" || true
+            if [ -s "$WORK_DIR/.hakrawler_errors.txt" ]; then
+                log_debug "Hakrawler errors:"
+                head -3 "$WORK_DIR/.hakrawler_errors.txt" | while read line; do
+                    log_debug "  $line"
+                done
+            fi
+            rm -f "$WORK_DIR/.hakrawler_errors.txt"
+        else
+            cat "$WORK_DIR/all_alive.txt" | hakrawler -depth 3 -plain > "$WORK_DIR/.urls_hakrawler.txt" 2>/dev/null || true
+        fi
+
         [ -f "$WORK_DIR/.urls_hakrawler.txt" ] && log_debug "Hakrawler: $(wc -l < "$WORK_DIR/.urls_hakrawler.txt") URLs found"
     else
         log_debug "Hakrawler skipped (tool missing or no live hosts)"
