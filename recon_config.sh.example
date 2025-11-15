@@ -1,0 +1,245 @@
+#!/bin/bash
+
+# TROXXER Configuration File
+# Copy this file to recon_config.sh and customize for your environment
+# cp recon_config.sh.example recon_config.sh
+
+# ============================================================================
+# DIRECTORY CONFIGURATION
+# ============================================================================
+
+# Base directory for all reconnaissance data
+export BASE_DIR="$HOME/recon"
+
+# Directory for wordlists and other resources
+export WORDLISTS_DIR="$BASE_DIR/wordlists"
+
+# ============================================================================
+# PERFORMANCE TUNING
+# ============================================================================
+
+# Default number of threads for most tools
+export DEFAULT_THREADS=25
+
+# Number of threads specifically for httpx
+export HTTPX_THREADS=50
+
+# Concurrent execution limit
+export CONCURRENCY=25
+
+# Rate limit (requests per second)
+# Lower this if you're getting blocked or rate-limited
+export RATE_LIMIT=150
+
+# Timeout for HTTP requests (seconds)
+export HTTP_TIMEOUT=10
+
+# DNS resolver threads
+export DNS_THREADS=100
+
+# Port scan rate (packets per second)
+export NAABU_RATE=1000
+
+# ============================================================================
+# API KEYS & AUTHENTICATION
+# ============================================================================
+
+# Subfinder API configuration file
+# Configure multiple API keys in this file for better results
+export SUBFINDER_CONFIG="$HOME/.config/subfinder/provider-config.yaml"
+
+# GitHub Personal Access Token (for better waybackurls/gau results)
+# Create at: https://github.com/settings/tokens
+export GITHUB_TOKEN=""
+
+# Note: Chaos API key is NOT required!
+# ProjectDiscovery provides bug bounty program data publicly at:
+# https://chaos-data.projectdiscovery.io/index.json
+# You can download scope data for any program without authentication
+
+# ============================================================================
+# NOTIFICATION SETTINGS
+# ============================================================================
+
+# Enable/disable notifications (true/false)
+export ENABLE_NOTIFICATIONS=false
+
+# Telegram Bot Configuration
+# Create bot at: https://t.me/botfather
+export TELEGRAM_BOT_TOKEN=""
+export TELEGRAM_CHAT_ID=""
+
+# Slack Webhook URL
+# Create at: https://api.slack.com/messaging/webhooks
+export SLACK_WEBHOOK_URL=""
+
+# Discord Webhook URL
+# Create in Discord server settings -> Integrations -> Webhooks
+export DISCORD_WEBHOOK_URL=""
+
+# ============================================================================
+# SCANNING OPTIONS
+# ============================================================================
+
+# Enable/disable resume capability (true/false)
+export ENABLE_RESUME=true
+
+# Enable/disable automatic stage3 execution after stage2 (true/false)
+export AUTO_STAGE3=true
+
+# Dry run mode - show what would be executed without running (true/false)
+export DRY_RUN=false
+
+# Enable diff mode - compare with previous scans (true/false)
+export ENABLE_DIFF=false
+
+# Enable JSON output (true/false)
+export ENABLE_JSON=true
+
+# ============================================================================
+# SCOPE MANAGEMENT
+# ============================================================================
+
+# Scope file location (one domain per line, # for comments)
+# Leave empty to use interactive domain input
+export SCOPE_FILE=""
+
+# Out of scope file (domains to exclude)
+export OUT_OF_SCOPE_FILE=""
+
+# ============================================================================
+# SUBDOMAIN ENUMERATION
+# ============================================================================
+
+# Enable passive subdomain enumeration only (no active DNS queries)
+export PASSIVE_ONLY=false
+
+# Enable bruteforce subdomain enumeration with wordlists
+export ENABLE_BRUTEFORCE=false
+
+# Subdomain wordlist for bruteforce
+export SUBDOMAIN_WORDLIST="$WORDLISTS_DIR/subdomains.txt"
+
+# ============================================================================
+# PORT SCANNING
+# ============================================================================
+
+# Port scan mode: full, top-100, top-1000, custom
+export PORT_SCAN_MODE="top-1000"
+
+# Custom ports (if PORT_SCAN_MODE=custom)
+export CUSTOM_PORTS="80,443,8080,8443,3000,8000,9000"
+
+# Skip port scanning entirely (true/false)
+export SKIP_PORT_SCAN=false
+
+# ============================================================================
+# VULNERABILITY SCANNING
+# ============================================================================
+
+# Nuclei scan templates directory
+export NUCLEI_TEMPLATES_DIR="$HOME/nuclei-templates"
+
+# Nuclei severity filter (info, low, medium, high, critical)
+# Leave empty for all severities
+export NUCLEI_SEVERITY=""
+
+# Nuclei rate limit
+export NUCLEI_RATE_LIMIT=150
+
+# Nuclei timeout (seconds)
+export NUCLEI_TIMEOUT=5
+
+# Skip vulnerability scanning (true/false)
+export SKIP_VULN_SCAN=false
+
+# ============================================================================
+# OUTPUT OPTIONS
+# ============================================================================
+
+# Verbosity level (0=quiet, 1=normal, 2=verbose, 3=debug)
+export VERBOSITY=1
+
+# Enable colored output (true/false)
+export ENABLE_COLORS=true
+
+# Save screenshots of live hosts (requires gowitness/aquatone)
+export ENABLE_SCREENSHOTS=false
+
+# ============================================================================
+# CACHING
+# ============================================================================
+
+# Enable caching of results (true/false)
+export ENABLE_CACHE=true
+
+# Cache directory
+export CACHE_DIR="$BASE_DIR/.cache"
+
+# Cache TTL in seconds (86400 = 24 hours)
+export CACHE_TTL=86400
+
+# ============================================================================
+# ADVANCED OPTIONS
+# ============================================================================
+
+# Custom resolvers file for DNS queries
+# Leave empty to use default resolvers
+export RESOLVERS_FILE=""
+
+# Maximum retries for failed operations
+export MAX_RETRIES=3
+
+# Delay between retries (seconds)
+export RETRY_DELAY=5
+
+# Enable experimental features (true/false)
+export ENABLE_EXPERIMENTAL=false
+
+# Custom user agent for HTTP requests
+export USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# Proxy configuration (for all HTTP requests)
+# Format: http://proxy:port or socks5://proxy:port
+export HTTP_PROXY=""
+export HTTPS_PROXY=""
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+
+# Enable detailed logging (true/false)
+export ENABLE_DETAILED_LOGGING=true
+
+# Log file location
+export LOG_DIR="$BASE_DIR/logs"
+
+# Log rotation size (in MB, 0 to disable rotation)
+export LOG_ROTATION_SIZE=100
+
+# ============================================================================
+# CUSTOM TOOL PATHS (if not in PATH)
+# ============================================================================
+
+# Leave empty to use tools from PATH
+export SUBFINDER_PATH=""
+export HTTPX_PATH=""
+export NUCLEI_PATH=""
+export DNSX_PATH=""
+export NAABU_PATH=""
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+# After modifying this file, it will be automatically loaded by start.sh
+# You can also source it manually: source recon_config.sh
+
+# For API key setup guides, see:
+# - Subfinder: https://github.com/projectdiscovery/subfinder#post-installation-instructions
+# - GitHub Token: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+
+# For notification setup guides, see:
+# - Telegram: https://core.telegram.org/bots#creating-a-new-bot
+# - Slack: https://api.slack.com/messaging/webhooks
+# - Discord: https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
