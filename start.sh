@@ -165,6 +165,7 @@ view_configuration() {
     echo -e "  ENABLE_JSON: ${GREEN}${ENABLE_JSON:-true}${NC}"
     echo -e "  ENABLE_CACHE: ${GREEN}${ENABLE_CACHE:-true}${NC}"
     echo -e "  DRY_RUN: ${GREEN}${DRY_RUN:-false}${NC}"
+    echo -e "  DEBUG: ${GREEN}${DEBUG:-0}${NC} ${YELLOW}(set DEBUG=1 for verbose logging)${NC}"
     echo ""
 
     echo -e "${CYAN}Notifications:${NC}"
