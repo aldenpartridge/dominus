@@ -9,12 +9,87 @@ if [ -f "$SCRIPT_DIR/recon_config.sh" ]; then
     source "$SCRIPT_DIR/recon_config.sh"
 fi
 
-# Source libraries
-source "$SCRIPT_DIR/lib/common.sh"
-source "$SCRIPT_DIR/lib/validation.sh"
-source "$SCRIPT_DIR/lib/notifications.sh"
-source "$SCRIPT_DIR/lib/resume.sh"
-source "$SCRIPT_DIR/lib/output.sh"
+# Source libraries (with fallback)
+if [ -f "$SCRIPT_DIR/lib/common.sh" ]; then
+    source "$SCRIPT_DIR/lib/common.sh"
+else
+    # Fallback: Define essential functions inline
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    CYAN='\033[0;36m'
+    MAGENTA='\033[0;35m'
+    NC='\033[0m'
+
+    log_info() { echo -e "${BLUE}[*]${NC} $1"; }
+    log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+    log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+    log_error() { echo -e "${RED}[✗]${NC} $1"; }
+    log_phase() { echo -e "${MAGENTA}[>>]${NC} ${CYAN}$1${NC}"; }
+
+    BASE_DIR="${BASE_DIR:-$HOME/recon}"
+    WORDLISTS_DIR="${WORDLISTS_DIR:-$BASE_DIR/wordlists}"
+    DEFAULT_THREADS="${DEFAULT_THREADS:-25}"
+    HTTPX_THREADS="${HTTPX_THREADS:-50}"
+    CONCURRENCY="${CONCURRENCY:-25}"
+    RATE_LIMIT="${RATE_LIMIT:-150}"
+fi
+
+[ -f "$SCRIPT_DIR/lib/validation.sh" ] && source "$SCRIPT_DIR/lib/validation.sh" || {
+    # Fallback validation functions
+    validate_domain() {
+        local domain="$1"
+        if [[ ! "$domain" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$ ]]; then
+            log_error "Invalid domain format: $domain"
+            return 1
+        fi
+        return 0
+    }
+
+    sanitize_org_name() {
+        echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_-]/_/g'
+    }
+
+    confirm_authorization() {
+        local domain="$1"
+        echo ""
+        log_warning "LEGAL WARNING: Only scan targets you are authorized to test"
+        log_info "Unauthorized scanning may be illegal in your jurisdiction"
+        echo ""
+        read -p "$(echo -e ${YELLOW}Do you have authorization to scan $domain? \(y/n\): ${NC})" auth
+        if [ "$auth" != "y" ] && [ "$auth" != "yes" ]; then
+            log_error "Authorization not confirmed - aborting"
+            return 1
+        fi
+        return 0
+    }
+}
+
+[ -f "$SCRIPT_DIR/lib/notifications.sh" ] && source "$SCRIPT_DIR/lib/notifications.sh"
+[ -f "$SCRIPT_DIR/lib/resume.sh" ] && source "$SCRIPT_DIR/lib/resume.sh"
+[ -f "$SCRIPT_DIR/lib/output.sh" ] && source "$SCRIPT_DIR/lib/output.sh" || {
+    # Fallback output functions
+    print_separator() {
+        echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${NC}"
+    }
+
+    print_separator_end() {
+        echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${NC}"
+    }
+
+    print_header() {
+        echo ""
+        echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
+        echo -e "${CYAN}║${NC} $1"
+        echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
+        echo ""
+    }
+
+    clear_cache() {
+        log_warning "Cache clearing not implemented (lib/resume.sh not loaded)"
+    }
+}
 
 # ASCII Art Banner
 show_banner() {
@@ -130,7 +205,61 @@ test_notifications() {
         return 1
     fi
 
-    test_notifications
+    local test_passed=0
+    local test_failed=0
+
+    # Test Telegram
+    if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ]; then
+        log_info "Testing Telegram notification..."
+        if curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=DOMINUS Test Notification" >/dev/null 2>&1; then
+            log_success "Telegram notification sent successfully"
+            ((test_passed++))
+        else
+            log_error "Telegram notification failed"
+            ((test_failed++))
+        fi
+    else
+        log_info "Telegram not configured (skipped)"
+    fi
+
+    # Test Slack
+    if [ -n "$SLACK_WEBHOOK_URL" ]; then
+        log_info "Testing Slack notification..."
+        if curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"text":"DOMINUS Test Notification"}' >/dev/null 2>&1; then
+            log_success "Slack notification sent successfully"
+            ((test_passed++))
+        else
+            log_error "Slack notification failed"
+            ((test_failed++))
+        fi
+    else
+        log_info "Slack not configured (skipped)"
+    fi
+
+    # Test Discord
+    if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+        log_info "Testing Discord notification..."
+        if curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"content":"DOMINUS Test Notification"}' >/dev/null 2>&1; then
+            log_success "Discord notification sent successfully"
+            ((test_passed++))
+        else
+            log_error "Discord notification failed"
+            ((test_failed++))
+        fi
+    else
+        log_info "Discord not configured (skipped)"
+    fi
+
+    echo ""
+    log_info "Test summary: $test_passed passed, $test_failed failed"
+
+    [ $test_failed -eq 0 ] && return 0 || return 1
 }
 
 clear_cache_menu() {

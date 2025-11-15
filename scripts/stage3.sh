@@ -288,9 +288,10 @@ main() {
     log_phase "Compiling threat intelligence..."
     
     cat "$VULN_DIR"/*.txt 2>/dev/null | sort -u > "$VULN_DIR/nuclei_all_findings.txt"
-    
-    # Extract critical findings
-    grep -iE "(critical|high)" "$VULN_DIR/nuclei_all_findings.txt" > "$VULN_DIR/critical_high_findings.txt" 2>/dev/null || touch "$VULN_DIR/critical_high_findings.txt"
+
+    # Extract critical findings (match nuclei severity format: [critical] or [high])
+    # This avoids false positives from URLs or descriptions containing these words
+    grep -iE '\[(critical|high)\]' "$VULN_DIR/nuclei_all_findings.txt" > "$VULN_DIR/critical_high_findings.txt" 2>/dev/null || touch "$VULN_DIR/critical_high_findings.txt"
     
     # Summary
     END_TIME=$(date +%s)
